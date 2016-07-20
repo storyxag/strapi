@@ -150,23 +150,32 @@ module.exports = {
 
   includePagination: function * (ctx, toSerialize, object, type) {
     return new Promise(function (resolve, reject) {
+
       if (strapi.models.hasOwnProperty(type) && strapi.hasOwnProperty(strapi.models[type].orm) && strapi[strapi.models[type].orm].hasOwnProperty('collections')) {
 
         // We force page-based strategy for now.
         modelsUtils.getCount(type).then(function (count) {
+
           const links = {};
-          const pageNumber = Math.ceil(count / strapi.config.jsonapi.paginate);
+          const itemsPerPage = _.first(_.values(_.pick(ctx.state.query, 'page[size]'))) || strapi.config.jsonapi.paginate;
+          const pageNumber = Math.ceil(count / itemsPerPage);
 
           // Get current page number
+          
           const value = _.first(_.values(_.pick(ctx.state.query, 'page[number]')));
           const currentPage = _.isEmpty(value) || parseInt(value, 10) === 0 ? 1 : value;
 
           // Verify integer
+          let newQueryParams = ctx.state.query;
+          newQueryParams['page[number]'] = 1;
           if (currentPage.toString() === parseInt(currentPage, 10).toString()) {
-            links.first = ctx.request.origin + ctx.state.url;
-            links.prev = ctx.request.origin + ctx.state.url + '?page[number]=' + (parseInt(currentPage, 10) - 1);
-            links.next = ctx.request.origin + ctx.state.url + '?page[number]=' + (parseInt(currentPage, 10) + 1);
-            links.last = ctx.request.origin + ctx.state.url + '?page[number]=' + pageNumber;
+            links.first = ctx.request.origin + ctx.state.url + '?' + utils.objectToQueryString(newQueryParams);
+            newQueryParams['page[number]'] = (parseInt(currentPage, 10) - 1);
+            links.prev = ctx.request.origin + ctx.state.url + '?' + utils.objectToQueryString(newQueryParams);
+            newQueryParams['page[number]'] = (parseInt(currentPage, 10) + 1);
+            links.next = ctx.request.origin + ctx.state.url + '?' + utils.objectToQueryString(newQueryParams);
+            newQueryParams['page[number]'] = pageNumber;
+            links.last = ctx.request.origin + ctx.state.url + '?' + utils.objectToQueryString(newQueryParams);
 
             // Second page
             if ((parseInt(currentPage, 10) - 1) === 0) {
