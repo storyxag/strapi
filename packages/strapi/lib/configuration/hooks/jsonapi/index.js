@@ -31,6 +31,7 @@ module.exports = function (strapi) {
 
         // Exclude administration routes
         if (this.request.url.indexOf('admin') === -1) {
+          
           if (this.request.type === 'application/vnd.api+json' && _.startsWith(this.status, '2')) {
             // Set required response header
             this.response.type = 'application/vnd.api+json';
@@ -43,8 +44,7 @@ module.exports = function (strapi) {
             if (!_.isUndefined(matchedRoute)) {
 
               // Handlers set the response body
-              const actionRoute = strapi.config.routes[this.request.method.toUpperCase() + ' ' + matchedRoute.path];
-
+              const actionRoute = strapi.config.routes[this.request.method.toUpperCase() + ' ' + matchedRoute.path.replace(strapi.config.prefix,'')];
               if (!_.isUndefined(actionRoute)) {
                 yield response.set(this, matchedRoute, actionRoute);
               }
@@ -68,7 +68,7 @@ module.exports = function (strapi) {
       }
 
       if ((_.isPlainObject(strapi.config.jsonapi) && strapi.config.jsonapi.enabled === true) || (_.isBoolean(strapi.config.jsonapi) && strapi.config.jsonapi === true)) {
-        strapi.app.use(_interceptor);
+				strapi.app.use(_interceptor);
       }
 
       cb();
@@ -80,6 +80,7 @@ module.exports = function (strapi) {
 
     parse: function () {
       return function * (next) {
+
         // Verify Content-Type header
         if (this.request.type === 'application/vnd.api+json') {
           // Only one and right header detected.

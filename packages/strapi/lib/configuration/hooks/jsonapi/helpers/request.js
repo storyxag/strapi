@@ -37,6 +37,7 @@ module.exports = {
       this.default.method = 'POST';
     }
 
+
     // HTTP methods allowed
     switch (this.default.method) {
       case 'GET':
@@ -158,8 +159,10 @@ module.exports = {
     ctx.state.url = ctx.request.url.replace(ctx.request.search, '');
     ctx.state.query = ctx.request.query;
 
+		console.log("ctx.query", ctx.query);
+
     _.forEach(ctx.query, function (value, key) {
-      if (_.includes(['include', 'sort', 'filter'], key)) {
+      if (_.includes(['include'], key)) {
         throw {
           status: 400,
           body: {
@@ -181,11 +184,13 @@ module.exports = {
 
         ctx.state.filter.fields[type] = value.split(',');
       } else if (key === 'page[number]' && _.isPlainObject(strapi.config.jsonapi) && strapi.config.jsonapi.hasOwnProperty('paginate') && strapi.config.jsonapi.paginate === parseInt(strapi.config.jsonapi.paginate, 10)) {
-        _.set(ctx.request.query, 'limit', strapi.config.jsonapi.paginate);
+				/*
+				_.set(ctx.request.query, 'limit', strapi.config.jsonapi.paginate);
         _.set(ctx.request.query, 'offset', strapi.config.jsonapi.paginate * (value - 1));
 
         // Remove JSON API page strategy
         ctx.request.query = _.omitBy(ctx.request.query, 'page[number]');
+				*/
       }
     });
   },
