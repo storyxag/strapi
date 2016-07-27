@@ -100,6 +100,11 @@ module.exports = {
         value[PK] = value[PK].toString();
       }
 
+      
+      if (ctx.state.filter === undefined){
+        ctx.state.filter = { fields: {} };
+      }
+
       toSerialize.attributes = ctx.state.filter.fields[type] || _.keys(value);
     }
 
@@ -126,7 +131,7 @@ module.exports = {
     }
 
     // Display JSON API pagination
-    if (_.isPlainObject(strapi.config.jsonapi) && strapi.config.jsonapi.hasOwnProperty('paginate') && strapi.config.jsonapi.paginate === parseInt(strapi.config.jsonapi.paginate, 10) && object === 'collection') {
+    if (ctx.request.method === 'GET' && _.isPlainObject(strapi.config.jsonapi) && strapi.config.jsonapi.hasOwnProperty('paginate') && strapi.config.jsonapi.paginate === parseInt(strapi.config.jsonapi.paginate, 10) && object === 'collection') {
       yield this.includePagination(ctx, toSerialize, object, type);
     }
 
