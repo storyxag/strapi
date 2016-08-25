@@ -54,10 +54,6 @@ module.exports = function (strapi) {
             // Set required response header
             this.response.type = 'application/vnd.api+json';
 
-            // Intercept error requests
-            this.body = {
-              errors: this.body
-            };
           } else if (this.request.type.indexOf('application/vnd.api+json') !== -1) {
 
             // Right header detected but there are others header too.
