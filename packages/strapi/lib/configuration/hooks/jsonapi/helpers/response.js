@@ -24,11 +24,11 @@ module.exports = {
 
   set: function * (ctx, matchedRoute, actionRoute) {
     const object = utils.getObject(matchedRoute);
-    const type = utils.getType(ctx, actionRoute.controller);
+    const type = actionRoute.type || utils.getType(ctx, actionRoute.controller);
 
     // Fetch a relationship that does not exist
     // Reject related request with `include` parameter
-    if (_.isUndefined(type) || (type === 'related' && ctx.params.hasOwnProperty('include'))) {
+      if (_.isUndefined(type) || (type === 'related' && ctx.params.hasOwnProperty('include'))) {
       ctx.response.status = 404;
       ctx.response.body = '';
 
