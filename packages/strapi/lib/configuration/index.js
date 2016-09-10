@@ -56,7 +56,8 @@ module.exports = function (strapi) {
         port: process.env.PORT || strapi.config.port || 1337,
 
         // Make the environment in config match the server one.
-        environment: strapi.app.env || process.env.NODE_ENV,
+        
+        environment: strapi.config.environment || process.env.NODE_ENV,
 
         // Default reload config.
         reload: {
