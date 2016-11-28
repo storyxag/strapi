@@ -223,77 +223,73 @@ module.exports = {
           message: 'Invalid ressource object'
         }
       };
-    } else if (!strapi.models.hasOwnProperty(body.data.type)) {
-      throw {
-        status: 403,
-        body: {
-          message: 'Unknow `type` ' + body.data.type
-        }
-      };
     }
+    
+    // Only check known types for missing attributes
+    if (strapi.models.hasOwnProperty(body.data.type)) {
+      // Extract required attributes
+      const requiredAttributes = _.omitBy(_.mapValues(strapi.models[body.data.type].attributes, function (attr) {
+        return (attr.required && attr.type) ? attr : undefined;
+      }), _.isUndefined);
+      // Identify missing attributes
+      const missingAttributes = body.data.hasOwnProperty('attributes') ? _.difference(_.keys(requiredAttributes), _.keys(body.data.attributes)) : null;
 
-    // Extract required attributes
-    const requiredAttributes = _.omitBy(_.mapValues(strapi.models[body.data.type].attributes, function (attr) {
-      return (attr.required && attr.type) ? attr : undefined;
-    }), _.isUndefined);
-    // Identify missing attributes
-    const missingAttributes = body.data.hasOwnProperty('attributes') ? _.difference(_.keys(requiredAttributes), _.keys(body.data.attributes)) : null;
-
-    if (!_.isEmpty(missingAttributes)) {
-      throw {
-        status: 403,
-        body: {
-          message: 'Missing required attributes (' + missingAttributes.toString() + ')'
-        }
-      };
-    }
-
-    // Extract required relationships
-    const requiredRelationships = _.omit(_.mapValues(strapi.models[body.data.type].attributes, function (attr) {
-      return (attr.required && (attr.model || attr.collection)) ? attr : undefined;
-    }), _.isUndefined);
-    // Identify missing relationships
-    const missingRelationships = body.data.hasOwnProperty('relationships') ? _.difference(_.keys(requiredRelationships), _.keys(body.data.relationships)) : null;
-
-    if (!_.isEmpty(missingRelationships)) {
-      throw {
-        status: 403,
-        body: {
-          message: 'Missing required relationships (' + missingRelationships.toString() + ')'
-        }
-      };
-    }
-
-    // Build array of errors
-    if (_.size(requiredRelationships)) {
-      const errors = _.remove(_.flattenDeep(_.map(body.data.relationships, function (relation, key) {
-        if (!relation.hasOwnProperty('data')) {
-          return {
-            message: 'Missing `data` member for relationships ' + relation
-          };
-        } else if (_.isArray(relation.data)) {
-          return _.map(relation.data, function (ressource, position) {
-            if (!utils.isRessourceObject(ressource)) {
-              return {
-                position: position,
-                message: 'Invalid ressource object in relationships ' + key
-              };
-            }
-          });
-        } else if (!utils.isRessourceObject(relation.data)) {
-          return {
-            message: 'Invalid ressource object for relationships ' + key
-          };
-        }
-      })), function (n) {
-        return !_.isUndefined(n);
-      });
-
-      if (!_.isEmpty(errors)) {
+      if (!_.isEmpty(missingAttributes)) {
         throw {
           status: 403,
-          body: errors
+          body: {
+            message: 'Missing required attributes (' + missingAttributes.toString() + ')'
+          }
         };
+      }
+
+      // Extract required relationships
+      const requiredRelationships = _.omit(_.mapValues(strapi.models[body.data.type].attributes, function (attr) {
+        return (attr.required && (attr.model || attr.collection)) ? attr : undefined;
+      }), _.isUndefined);
+      // Identify missing relationships
+      const missingRelationships = body.data.hasOwnProperty('relationships') ? _.difference(_.keys(requiredRelationships), _.keys(body.data.relationships)) : null;
+
+      if (!_.isEmpty(missingRelationships)) {
+        throw {
+          status: 403,
+          body: {
+            message: 'Missing required relationships (' + missingRelationships.toString() + ')'
+          }
+        };
+      }
+
+      // Build array of errors
+      if (_.size(requiredRelationships)) {
+        const errors = _.remove(_.flattenDeep(_.map(body.data.relationships, function (relation, key) {
+          if (!relation.hasOwnProperty('data')) {
+            return {
+              message: 'Missing `data` member for relationships ' + relation
+            };
+          } else if (_.isArray(relation.data)) {
+            return _.map(relation.data, function (ressource, position) {
+              if (!utils.isRessourceObject(ressource)) {
+                return {
+                  position: position,
+                  message: 'Invalid ressource object in relationships ' + key
+                };
+              }
+            });
+          } else if (!utils.isRessourceObject(relation.data)) {
+            return {
+              message: 'Invalid ressource object for relationships ' + key
+            };
+          }
+        })), function (n) {
+          return !_.isUndefined(n);
+        });
+
+        if (!_.isEmpty(errors)) {
+          throw {
+            status: 403,
+            body: errors
+          };
+        }
       }
     }
   }
