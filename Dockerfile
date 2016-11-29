@@ -16,7 +16,7 @@ RUN npm link && \
 
 WORKDIR ${STRAPI_DIR}/packages/strapi
 RUN npm link strapi-utils && \
-  npm link strapi-knex &&
+  npm link strapi-knex && \
   npm link && \
   npm install
 
