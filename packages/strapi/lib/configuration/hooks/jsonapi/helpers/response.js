@@ -143,7 +143,6 @@ module.exports = {
 
     
     const serialized = new JSONAPI.Serializer(type, value, toSerialize);
-
     // Display JSON API version support
     if (_.isPlainObject(strapi.config.jsonapi) && strapi.config.jsonapi.hasOwnProperty('showVersion') && strapi.config.jsonapi.showVersion === true) {
       _.assign(serialized, {
@@ -239,6 +238,7 @@ module.exports = {
   includedRelationShips: function (ctx, toSerialize, type) {
     if (strapi.models.hasOwnProperty(type)) {
       _.forEach(strapi.models[type].associations, function (relation) {
+
         const PK = modelsUtils.getPK(relation.model) || modelsUtils.getPK(relation.collection);
         const availableRoutes = {
           relSlSelf: utils.isRoute('GET /' + type + '/:' + PK + '/relationships/:relation'),
@@ -246,7 +246,8 @@ module.exports = {
           incSelf: relation.model ? utils.isRoute('GET /' + relation.model + '/:' + PK) : utils.isRoute('GET /' + relation.collection + '/:' + PK)
         };
       
-
+      debugger
+        const modelType = relation.collection || relation.model
         switch (relation.nature) {
           case 'oneToOne':
           case 'manyToOne':
@@ -255,7 +256,7 @@ module.exports = {
               ref: PK,
               included: strapi.config.jsonapi.includedRelationshipData || true,
               ignoreRelationshipData: strapi.config.jsonapi.ignoreRelationshipData || false,
-              attributes: ctx.state.filter.fields[relation.model] || _.keys(_.omit(strapi.models[type].attributes, _.isFunction)),
+              attributes: ctx.state.filter.fields[relation.model] || _.keys(_.omit(strapi.models[modelType].attributes, _.isFunction)),
               relationshipLinks: {
                 self: function (record) {
                   if (record.hasOwnProperty(PK) && availableRoutes.relSlSelf) {
@@ -286,7 +287,6 @@ module.exports = {
           case 'oneToMany':
           case 'manyToMany':
             // Array
-            const modelType = relation.collection || relation.model
             toSerialize[relation.alias] = {
               ref: PK,
               included: strapi.config.jsonapi.includedRelationshipData || true,
