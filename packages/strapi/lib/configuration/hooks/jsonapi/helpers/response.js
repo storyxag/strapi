@@ -141,6 +141,7 @@ module.exports = {
       yield this.includePagination(ctx, toSerialize, object, type);
     }
 
+    
     const serialized = new JSONAPI.Serializer(type, value, toSerialize);
 
     // Display JSON API version support
@@ -244,6 +245,7 @@ module.exports = {
           relSlRelated: utils.isRoute('GET /' + type + '/:' + PK),
           incSelf: relation.model ? utils.isRoute('GET /' + relation.model + '/:' + PK) : utils.isRoute('GET /' + relation.collection + '/:' + PK)
         };
+      
 
         switch (relation.nature) {
           case 'oneToOne':
@@ -284,12 +286,13 @@ module.exports = {
           case 'oneToMany':
           case 'manyToMany':
             // Array
+            const modelType = relation.collection || relation.model
             toSerialize[relation.alias] = {
               ref: PK,
               included: strapi.config.jsonapi.includedRelationshipData || true,
               ignoreRelationshipData: strapi.config.jsonapi.ignoreRelationshipData || false,
               typeForAttribute: relation.collection,
-              attributes: ctx.state.filter.fields[relation.collection] || _.keys(_.omit(strapi.models[type].attributes, _.isFunction)),
+              attributes: ctx.state.filter.fields[relation.collection] || _.keys(_.omit(strapi.models[modelType].attributes, _.isFunction)),
               relationshipLinks: {
                 self: function (record) {
                   if (record.hasOwnProperty(PK) && availableRoutes.relSlSelf) {
