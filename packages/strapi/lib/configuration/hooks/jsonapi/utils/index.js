@@ -73,11 +73,29 @@ module.exports = {
 
     return undefined;
   },
+  getOwnType: function (ctx, supposedType) {
+    if (strapi.models.hasOwnProperty(supposedType.toLowerCase())) {
+      return supposedType.toLowerCase();
+    } else if (!strapi.models.hasOwnProperty(supposedType.toLowerCase())) {
+      // Deep search based on the relation alias
+      const tryFindType = _.reject(_.flattenDeep(_.map(strapi.models, function (model) {
+        return _.map(model.associations, function (relation) {
+          return (supposedType.toLowerCase() === relation.alias) ? relation.model || relation.collection : undefined;
+        });
+      })), _.isUndefined);
+
+      if (!_.isUndefined(tryFindType)) {
+        return _.first(tryFindType);
+      }
+    }
+
+    return undefined;
+  },
 
 	/**
 	 * Convert an object to a query string
 	 */
-	
+
 	objectToQueryString: function (obj) {
     var qs = _.reduce(obj, function (result, value, key) {
         if (!_.isNull(value) && !_.isUndefined(value)) {

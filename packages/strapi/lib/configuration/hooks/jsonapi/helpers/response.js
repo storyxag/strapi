@@ -24,16 +24,14 @@ module.exports = {
 
   set: function * (ctx, matchedRoute, actionRoute) {
     const object = actionRoute.objectType || utils.getObject(matchedRoute);
-    
     if (actionRoute.supposedType !== undefined) {
       actionRoute.controller = actionRoute.supposedType
     }
-    
     const type = actionRoute.type || utils.getType(ctx, actionRoute.controller);
-
+    const ownType = utils.getOwnType(ctx, actionRoute.controller)
     // Fetch a relationship that does not exist
     // Reject related request with `include` parameter
-      
+
       if (_.isUndefined(type) || (type === 'related' && ctx.params.hasOwnProperty('include'))) {
       ctx.response.status = 404;
       ctx.response.body = '';
@@ -45,20 +43,18 @@ module.exports = {
 
       return;
     }
-
     // Fetch and format value
     const value = this.fetchValue(ctx, object);
 
     if (!_.isNull(value) && !_.isUndefined(value)) {
-      ctx.response.body = yield this.serialize(ctx, type, object, value, matchedRoute);
+      ctx.response.body = yield this.serialize(ctx, type, object, value, ownType);
     }
   },
 
   /**
    * Serialize response with JSON API specification
    */
-
-  serialize: function * (ctx, type, object, value) {
+  serialize: function * (ctx, type, object, value, ownType) {
     const toSerialize = {
       topLevelLinks: {self: ctx.request.origin + ctx.request.originalUrl},
       keyForAttribute: 'dash-case',
@@ -106,14 +102,13 @@ module.exports = {
         value[PK] = value[PK].toString();
       }
 
-      
+
       if (ctx.state.filter === undefined){
         ctx.state.filter = { fields: {} };
       }
 
       toSerialize.attributes = ctx.state.filter.fields[type] || _.keys(value);
     }
-
     switch (object) {
       case 'collection':
         this.includedRelationShips(ctx, toSerialize, type);
@@ -137,11 +132,15 @@ module.exports = {
     }
 
     // Display JSON API pagination
-    if (ctx.request.method === 'GET' && _.isPlainObject(strapi.config.jsonapi) && strapi.config.jsonapi.hasOwnProperty('paginate') && strapi.config.jsonapi.paginate === parseInt(strapi.config.jsonapi.paginate, 10) && object === 'collection') {
-      yield this.includePagination(ctx, toSerialize, object, type);
-    }
+    if (ctx.request.method === 'GET' && _.isPlainObject(strapi.config.jsonapi) && strapi.config.jsonapi.hasOwnProperty('paginate') && strapi.config.jsonapi.paginate === parseInt(strapi.config.jsonapi.paginate, 10)) {
+      if (object === 'collection') {
+        yield this.includePagination(ctx, toSerialize, object, type);
+      }
+      if ( (object === 'related' || object === 'relationships') && ctx.params.hasOwnProperty('relation') && !_.isEmpty(_.find(strapi.models[ownType].associations, {alias: ctx.params.relation, collection: type}))) {
+        yield this.includePagination(ctx, toSerialize, object, type, ownType);
+      }
 
-    
+    }
     const serialized = new JSONAPI.Serializer(type, value, toSerialize);
     // Display JSON API version support
     if (_.isPlainObject(strapi.config.jsonapi) && strapi.config.jsonapi.hasOwnProperty('showVersion') && strapi.config.jsonapi.showVersion === true) {
@@ -151,7 +150,6 @@ module.exports = {
         }
       });
     }
-
     return serialized;
   },
 
@@ -159,20 +157,34 @@ module.exports = {
    * Include pagination links to the object
    */
 
-  includePagination: function * (ctx, toSerialize, object, type) {
+  includePagination: function * (ctx, toSerialize, object, type, ownType) {
     return new Promise(function (resolve, reject) {
-
       if (strapi.models.hasOwnProperty(type) && strapi.hasOwnProperty(strapi.models[type].orm) && strapi[strapi.models[type].orm].hasOwnProperty('collections')) {
 
         // We force page-based strategy for now.
-        modelsUtils.getCount(type).then(function (count) {
+        let countConfig
+        if (ownType) {
+          let aliasForOwn = _.first(_.reject(_.map(strapi.models[type].associations, function (relation) {
+            return (relation.model === ownType || relation.collection === ownType) ? relation.alias : undefined;
+          }), _.isUndefined));
+          if (aliasForOwn) {
+            countConfig = {
+              ownId: ctx.params.id,
+              ownType: ownType,
+              type: type,
+              aliasForOwn: aliasForOwn
+            }
+          }
+        }
+
+        modelsUtils.getCount(countConfig || type).then(function (count) {
 
           const links = {};
           const itemsPerPage = _.first(_.values(_.pick(ctx.state.query, 'page[size]'))) || strapi.config.jsonapi.paginate;
           const pageNumber = Math.ceil(count / itemsPerPage);
 
           // Get current page number
-          
+
           const value = _.first(_.values(_.pick(ctx.state.query, 'page[number]')));
           const currentPage = _.isEmpty(value) || parseInt(value, 10) === 0 ? 1 : value;
 
@@ -245,7 +257,7 @@ module.exports = {
           relSlRelated: utils.isRoute('GET /' + type + '/:' + PK),
           incSelf: relation.model ? utils.isRoute('GET /' + relation.model + '/:' + PK) : utils.isRoute('GET /' + relation.collection + '/:' + PK)
         };
-      
+
       debugger
         const modelType = relation.collection || relation.model
         switch (relation.nature) {
@@ -271,6 +283,9 @@ module.exports = {
                   }
 
                   return undefined;
+                },
+                next: function (data, record) {
+                  return 'next relation';
                 }
               },
               includedLinks: {
