@@ -41,8 +41,9 @@ module.exports = {
    * Find primary key per ORM
    */
 
-  getCount: function (collectionIdentity) {
-    if (_.isString(collectionIdentity)) {
+  getCount: function (entity) {
+    if (_.isString(entity)) {
+      let collectionIdentity = entity
       const ORM = this.getORM(collectionIdentity);
       try {
         const GraphQLFunctions = require(path.resolve(strapi.config.appPath, 'node_modules', 'strapi-' + ORM, 'lib', 'utils'));
@@ -53,6 +54,17 @@ module.exports = {
       } catch (err) {
         return undefined;
       }
+    }
+    if (_.isObject(entity) && entity.type && entity.ownType && entity.ownId && entity.aliasForOwn) {
+      return new Promise (function (resolve) {
+        let query  =  {}
+        query[entity.aliasForOwn] = entity.ownId
+        strapi.bookshelf.collections[entity.type].forge()
+          .query({where: query})
+          .count().then(function (count) {
+            resolve(count);
+        });
+      })
     }
 
     return undefined;
