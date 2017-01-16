@@ -177,8 +177,10 @@ module.exports = {
           }
         }
 
-        modelsUtils.getCount(countConfig || type).then(function (count) {
-
+        const countFunc = ctx.body && !_.isEmpty(ctx.body.pagination)
+          ? Promise.resolve(ctx.body.pagination.rowCount)
+          : modelsUtils.getCount(countConfig || type)
+        countFunc.then(function (count) {
           const links = {};
           const itemsPerPage = _.first(_.values(_.pick(ctx.state.query, 'page[size]'))) || strapi.config.jsonapi.paginate;
           const pageNumber = Math.ceil(count / itemsPerPage);
