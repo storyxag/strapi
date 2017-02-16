@@ -260,7 +260,6 @@ module.exports = {
           incSelf: relation.model ? utils.isRoute('GET /' + relation.model + '/:' + PK) : utils.isRoute('GET /' + relation.collection + '/:' + PK)
         };
 
-      debugger
         const modelType = relation.collection || relation.model
         switch (relation.nature) {
           case 'oneToOne':

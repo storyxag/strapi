@@ -159,8 +159,6 @@ module.exports = {
     ctx.state.url = ctx.request.url.replace(ctx.request.search, '');
     ctx.state.query = ctx.request.query;
 
-		console.log("ctx.query", ctx.query);
-
     _.forEach(ctx.query, function (value, key) {
       if (_.includes(['include'], key)) {
         throw {
@@ -224,7 +222,7 @@ module.exports = {
         }
       };
     }
-    
+
     // Only check known types for missing attributes
     if (strapi.models.hasOwnProperty(body.data.type)) {
       // Extract required attributes
