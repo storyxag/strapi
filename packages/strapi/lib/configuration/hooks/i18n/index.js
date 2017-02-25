@@ -9,6 +9,7 @@ const path = require('path');
 
 // Public node modules.
 const _ = require('lodash');
+const I18n2 = require('i18n-2');
 
 /**
  * i18n hook
@@ -51,6 +52,17 @@ module.exports = function (strapi) {
           cookieName: strapi.config.i18n.cookieName,
           extension: '.json'
         }));
+
+        // hacked global i18n
+        let i18n = new I18n2({
+          directory: path.resolve(strapi.config.appPath, strapi.config.paths.config, 'locales'),
+          locales: strapi.config.i18n.locales,
+          defaultLocale: strapi.config.i18n.defaultLocale,
+          modes: strapi.config.i18n.modes,
+          cookieName: strapi.config.i18n.cookieName,
+          extension: '.json'
+        })
+        strapi.i18n = i18n
       }
 
       cb();
