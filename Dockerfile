@@ -1,9 +1,9 @@
-FROM node:6
+FROM node:7.7
 
 # Set environment variables
 ENV NPM_CONFIG_LOGLEVEL="warn" \
     STRAPI_DIR="/usr/strapi_install"
-    
+
 COPY ./ ${STRAPI_DIR}
 
 WORKDIR ${STRAPI_DIR}/packages/strapi-utils
