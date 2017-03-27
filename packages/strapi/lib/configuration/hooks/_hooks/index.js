@@ -64,7 +64,15 @@ module.exports = function (strapi) {
           }
           return memo;
         }, {}));
-
+        _.extend(strapi.hooks, _.reduce(strapi.config.hooks.customs, function (memo, identity) {
+            const hookName = identity.match(/^strapi-/) ? identity.replace(/^strapi-/, '') : identity;
+            try {
+              memo[hookName] = require(path.resolve(strapi.config.appPath, 'hooks', identity));
+            } catch (err) {
+              cb(err);
+            }
+          return memo
+        }, {}));
         cb();
       });
     }
