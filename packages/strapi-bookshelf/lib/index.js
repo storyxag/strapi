@@ -184,7 +184,20 @@ module.exports = function (strapi) {
                   return this.belongsTo(global[_.capitalize(details.model)], name);
                 };
                 break;
-
+              case 'morphMany':
+                console.log('morphMany', name)
+                loadedModel[name] = function () {
+                  return this.morphMany(global[_.capitalize(details.collection)], details.via);
+                };
+                break;
+              case 'morphTo':
+                console.log('morphTo', name)
+                loadedModel[name] = function () {
+                  let m1 = [name]
+                  let m2 = details.morph.map(morphName => global[_.capitalize(morphName)])
+                  return this.morphTo.apply(this, m1.concat(m2));
+                };
+                break;
               case 'belongsToMany':
                 const tableName = _.map(_.sortBy([strapi.models[details.collection].attributes[details.via], details], 'collection'), function (table) {
                   return _.snakeCase(pluralize.plural(table.collection) + ' ' + pluralize.plural(table.via));

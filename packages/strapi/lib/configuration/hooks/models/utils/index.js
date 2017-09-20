@@ -94,6 +94,8 @@ module.exports = {
         types.other = 'collection';
       } else if (relatedAttribute.hasOwnProperty('model')) {
         types.other = 'model';
+      } else if (relatedAttribute.hasOwnProperty('morph')) {
+        types.other = 'morph';
       }
     } else if (association.hasOwnProperty('via') && association.hasOwnProperty('model')) {
       types.current = 'modelD';
@@ -135,6 +137,21 @@ module.exports = {
           }
         });
       });
+    } else if (association.hasOwnProperty('morph')) {
+      types.current = 'morph';
+      // We have to find if they are a model linked to this key
+      _.forIn(models, function (model) {
+        _.forIn(model.attributes, function (attribute) {
+          if (attribute.hasOwnProperty('via') && attribute.via === key) {
+            if (attribute.hasOwnProperty('collection')) {
+              types.other = 'collection';
+
+              // Break loop
+              return false;
+            }
+          }
+        });
+      });
     }
 
     if (types.current === 'modelD' && types.other === 'model') {
@@ -167,6 +184,16 @@ module.exports = {
         nature: 'oneWay',
         verbose: 'belongsTo'
       };
+    } else if (types.current === 'morph' && (types.other === 'collection' || types.other === '')) {
+      return {
+        nature: 'oneToMany',
+        verbose: 'morphTo'
+      };
+    } else if (types.current === 'collection' && types.other === 'morph') {
+      return {
+        nature: 'manyToOne',
+        verbose: 'morphMany'
+      };
     }
 
     return undefined;
@@ -186,12 +213,15 @@ module.exports = {
 
   defineAssociations: function (model, definition, association, key) {
     // Initialize associations object
+    if (definition.globalId === 'Document') {
+      console.log(definition)
+    }
     if (definition.associations === undefined) {
       definition.associations = [];
     }
 
     // Exclude non-relational attribute
-    if (!association.hasOwnProperty('collection') && !association.hasOwnProperty('model')) {
+    if (!association.hasOwnProperty('collection') && !association.hasOwnProperty('model') && !association.hasOwnProperty('morph')) {
       return undefined;
     }
 
@@ -215,6 +245,14 @@ module.exports = {
         model: association.model,
         via: association.via || undefined,
         nature: infos.nature,
+        autoPopulate: (_.get(association, 'autoPopulate') || _.get(strapi.config, 'jsonapi.enabled')) === true
+      });
+    } else if (association.hasOwnProperty('morph')) {
+      definition.associations.push({
+        alias: key,
+        type: 'morph',
+        model: association.model,
+        via: association.via || undefined,
         autoPopulate: (_.get(association, 'autoPopulate') || _.get(strapi.config, 'jsonapi.enabled')) === true
       });
     }
