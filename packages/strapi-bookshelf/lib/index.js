@@ -185,13 +185,11 @@ module.exports = function (strapi) {
                 };
                 break;
               case 'morphMany':
-                console.log('morphMany', name)
                 loadedModel[name] = function () {
                   return this.morphMany(global[_.capitalize(details.collection)], details.via);
                 };
                 break;
               case 'morphTo':
-                console.log('morphTo', name)
                 loadedModel[name] = function () {
                   let m1 = [name]
                   let m2 = details.morph.map(morphName => global[_.capitalize(morphName)])
