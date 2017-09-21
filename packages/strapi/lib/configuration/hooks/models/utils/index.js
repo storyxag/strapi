@@ -213,9 +213,6 @@ module.exports = {
 
   defineAssociations: function (model, definition, association, key) {
     // Initialize associations object
-    if (definition.globalId === 'Document') {
-      console.log(definition)
-    }
     if (definition.associations === undefined) {
       definition.associations = [];
     }
