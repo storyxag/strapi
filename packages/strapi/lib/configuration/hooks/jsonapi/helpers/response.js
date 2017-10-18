@@ -201,6 +201,11 @@ module.exports = {
             links.next = ctx.request.origin + ctx.state.url + '?' + utils.objectToQueryString(newQueryParams);
             newQueryParams['page[number]'] = pageNumber;
             links.last = ctx.request.origin + ctx.state.url + '?' + utils.objectToQueryString(newQueryParams);
+            // return more pagination info
+            links.total = count
+            links.currentPage = currentPage
+            links.pageNumber = pageNumber
+            links.itemsPerPage = itemsPerPage
 
             // Second page
             if ((parseInt(currentPage, 10) - 1) === 0) {
