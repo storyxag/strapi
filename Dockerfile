@@ -3,6 +3,9 @@ FROM node:7.7
 # Set environment variables
 ENV NPM_CONFIG_LOGLEVEL="warn" \
     STRAPI_DIR="/usr/strapi_install"
+    
+RUN apt-get update && \
+    apt-get install -y pdftk
 
 COPY ./ ${STRAPI_DIR}
 
